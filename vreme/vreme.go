@@ -2,8 +2,6 @@ package vreme
 
 import (
     "fmt"
-    "math/rand"
-    "math"
 )
 
 type Postaja struct {
@@ -13,12 +11,23 @@ type Postaja struct {
     
 }
 
-func IzpisPorocila(postaje map[string]Postaja) {
+var MinTemp float64
+var MaxTemp float64
+var StMeritev int
+
+var postaje = make(map[string]Postaja)
+
+func IzpisPorocila() (string, bool) {
+    var s string
+    ima_postaje := false
+    if len(postaje) > 0 {
+        ima_postaje = true
+    }
     for oznaka, postaja := range postaje {
-        min, max, avg, ok := statistika(postaje, oznaka)
+        min, max, avg, ok := statistika(oznaka)
         
         if !ok {
-            fmt.Printf("%s: premalo meritev\n", postaja.ime)
+            s += fmt.Sprintf("%s: premalo meritev\n", postaja.ime)
             continue
         }
         
@@ -35,31 +44,34 @@ func IzpisPorocila(postaje map[string]Postaja) {
                 status = "Mrzlo"
         }
         
-        fmt.Printf("%s: min %.1f °C, max %.1f °C, povprečje %.1f °C -> %s\n", postaja.ime, min, max, avg, status)
+        s += fmt.Sprintf("%s: min %.1f °C, max %.1f °C, povprečje %.1f °C -> %s\n", postaja.ime, min, max, avg, status)
     }
+    return s, ima_postaje
 }
 
-func IzpisMeritev(postaje map[string]Postaja) {
-    fmt.Println("MERITVE:")
+func IzpisMeritev() (string, bool)  {
+    meritve := "MERITVE:\n"
+    ima_meritve := false
+    if len(postaje) > 0 {
+        ima_meritve = true
+    }
     for oznaka, postaja := range postaje {
-        fmt.Printf("%s - %s (%s): ", oznaka, postaja.ime, postaja.kraj)
-        fmt.Println(postaja.meritve)
+        
+        meritve += fmt.Sprintf("%s - %s (%s): %v\n", oznaka, postaja.ime, postaja.kraj, postaja.meritve)
     }
+    return meritve, ima_meritve
 }
 
-func statistika(postaje map[string]Postaja, oznaka string) (najnizja, najvisja, povprecna float64, ok bool) {
+func statistika(oznaka string) (najnizja, najvisja, povprecna float64, ok bool) {
     postaja, ok := postaje[oznaka]
     
-    if !ok || len(postaja.meritve) < 3 {
+    if !ok || len(postaja.meritve) < StMeritev {
         return 0,0,0,false
     }
     
-    var min float64
-    var max float64
     var avg float64
-    
-    max = -51
-    min = 51
+    max := MinTemp
+    min := MaxTemp
     avg = 0
     
     for _, m := range postaja.meritve {  
@@ -79,29 +91,50 @@ func statistika(postaje map[string]Postaja, oznaka string) (najnizja, najvisja, 
     
 }
 
-func DodajMeritev(postaje map[string]Postaja, oznaka string, temperatura float64) {
+func DodajMeritev(oznaka string, temperatura float64) error {
     temp, ok := postaje[oznaka]
     
     if !ok {
-        fmt.Println("Ta postaja ne obstaja!")
-        return
+        err := fmt.Errorf("Ta postaja ne obstaja!")
+        return err
     }
     
-    if temperatura < -50 || temperatura > 50 {
-        fmt.Println("Podana temperatura ni veljavna!")
-        return
+    if temperatura < MinTemp || temperatura > MaxTemp {
+        err := fmt.Errorf("Podana temperatura ni veljavna!")
+        return err
     }
     
     temp.meritve = append(temp.meritve, temperatura)
     postaje[oznaka] = temp
 
+    return nil
 }
 
-func DodajPostajo(oznaka string, ime string, kraj string) {
+func DodajPostajo(oznaka string, ime string, kraj string) error {
+    if ime == "" {
+        err := fmt.Errorf("Ime je prazno")
+        return err
+    } else if oznaka == "" {
+        err := fmt.Errorf("Oznaka je prazna")
+        return err
+    } else if kraj == "" {
+        err := fmt.Errorf("Kraj je prazen")
+        return err
+    }
+    
     var p Postaja
     p.ime = ime
     p.kraj = kraj
-    p.meritve = []float64
-    meritve[oznaka] = p
+    p.meritve = []float64{}
+    postaje[oznaka] = p
+    
+    return nil
 }
 
+func VrniOznake() []string {
+    oznake := []string{}
+    for oznaka, _ := range postaje {
+        oznake = append(oznake, oznaka)
+    }
+    return oznake
+}
