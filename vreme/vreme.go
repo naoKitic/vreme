@@ -1,9 +1,30 @@
+// Package vreme simulates an array of train stations with weather measurements and 
+// creates a report. 
+//
+// The package implements a map of train stations specified by label that contains its name, location and measurements.
+// By calling the IzpisPorocila function, we can create a report based on the measurements for each station.
+// 
+// Example usage:
+//  
+//  vreme.DodajPostajo("LJ01", "Ljubljana Rudnik", "Ljubljana")
+//  vreme.DodajMeritev("LJ01", 11.1)
+//  vreme.DodajMeritev("LJ01", 13.2)
+//  vreme.DodajMeritev("LJ01", 9.0)
+// 
+//  vreme.IzpisMeritev()
+//  vreme.IzpisPorocila()
+//
+// The package defines these variables by default:
+//   - minimum temperature: -50°C
+//   - maximum temperature: 50°C
+//   - minimum number of measurements for report: 3
+// These values can be edited with the NastaviParametre function.
 package vreme
 
 import (
     "fmt"
 )
-
+// Postaja represents a single station.
 type Postaja struct {
     ime     string
     kraj    string
@@ -11,12 +32,14 @@ type Postaja struct {
     
 }
 
-var MinTemp float64
-var MaxTemp float64
-var StMeritev int
+var minTemp float64 = -50
+var maxTemp float64 = 50
+var stMeritev int = 3
 
 var postaje = make(map[string]Postaja)
 
+// IzpisPorocila() returns a string report based on measurements for each station.
+// If a station has less than the minimum number of measurements, it will say "premalo meritev". 
 func IzpisPorocila() (string, bool) {
     var s string
     ima_postaje := false
@@ -49,6 +72,7 @@ func IzpisPorocila() (string, bool) {
     return s, ima_postaje
 }
 
+// IzpisMeritev() returns a strign containing information of all the stations.
 func IzpisMeritev() (string, bool)  {
     meritve := "MERITVE:\n"
     ima_meritve := false
@@ -65,13 +89,13 @@ func IzpisMeritev() (string, bool)  {
 func statistika(oznaka string) (najnizja, najvisja, povprecna float64, ok bool) {
     postaja, ok := postaje[oznaka]
     
-    if !ok || len(postaja.meritve) < StMeritev {
+    if !ok || len(postaja.meritve) < stMeritev {
         return 0,0,0,false
     }
     
     var avg float64
-    max := MinTemp
-    min := MaxTemp
+    max := minTemp
+    min := maxTemp
     avg = 0
     
     for _, m := range postaja.meritve {  
@@ -91,6 +115,10 @@ func statistika(oznaka string) (najnizja, najvisja, povprecna float64, ok bool) 
     
 }
 
+// With DodajMeritev(label, temperature) we can add a new temperature to the station
+// specified by label.
+// The function will return an error in case the temperature is higher/lower than the maximum/minimum temperature.
+// It will also return an error if the given label doesn't exist.
 func DodajMeritev(oznaka string, temperatura float64) error {
     temp, ok := postaje[oznaka]
     
@@ -99,7 +127,7 @@ func DodajMeritev(oznaka string, temperatura float64) error {
         return err
     }
     
-    if temperatura < MinTemp || temperatura > MaxTemp {
+    if temperatura < minTemp || temperatura > maxTemp {
         err := fmt.Errorf("Podana temperatura ni veljavna!")
         return err
     }
@@ -110,7 +138,12 @@ func DodajMeritev(oznaka string, temperatura float64) error {
     return nil
 }
 
+// DodajPostajo(label, name, location) adds a new station.
+// The function will return an error if any of the parameters are empty or 
+// the given label already exists.
 func DodajPostajo(oznaka string, ime string, kraj string) error {
+    _, ok := postaje[oznaka]
+    
     if ime == "" {
         err := fmt.Errorf("Ime je prazno")
         return err
@@ -120,6 +153,9 @@ func DodajPostajo(oznaka string, ime string, kraj string) error {
     } else if kraj == "" {
         err := fmt.Errorf("Kraj je prazen")
         return err
+    } else if ok {
+        err := fmt.Errorf("Oznaka že obstaja")
+        return err
     }
     
     var p Postaja
@@ -127,14 +163,24 @@ func DodajPostajo(oznaka string, ime string, kraj string) error {
     p.kraj = kraj
     p.meritve = []float64{}
     postaje[oznaka] = p
-    
     return nil
 }
 
+// VrniOznake() returns a slice of all the labels
 func VrniOznake() []string {
     oznake := []string{}
     for oznaka, _ := range postaje {
         oznake = append(oznake, oznaka)
     }
+    
     return oznake
+}
+
+// NastaviParametre(minTemp, maxTemp, avgMeasurements) sets the parameters
+// for minimum temperature, maximum temperature and number of measurements needed to
+// create a report respectively.
+func NastaviParametre(min float64, max float64, avg int) {
+    minTemp = min
+    maxTemp = max
+    stMeritev = avg
 }

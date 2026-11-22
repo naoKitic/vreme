@@ -45,11 +45,7 @@ func main() {
         },
         
         Action: func(context.Context, *cli.Command) error {
-            
-            vreme.MinTemp   = minTemp
-            vreme.MaxTemp   = maxTemp
-            vreme.StMeritev = stMeritev
-            
+            vreme.NastaviParametre(minTemp, maxTemp, stMeritev)
             return vremeInterface()
         },
         
