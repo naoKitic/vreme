@@ -20,4 +20,5 @@ The package defines these variables by default:
   - minimum temperature: -50°C
   - maximum temperature: 50°C
   - minimum number of measurements for report: 3
+  
 These values can be edited with the NastaviParametre function.
